@@ -1,48 +1,62 @@
-local function capa()
-  local capabilities = vim.lsp.protocol.make_client_capabilities()
-  vim.tbl_extend("force", capabilities, require("cmp_nvim_lsp").default_capabilities())
-  capabilities.dynamicRegistration = false
-  capabilities.lineFoldingOnly = true
-  return { capabilities = capabilities }
+local lspset = function(bind, callback, bufnr, desc)
+  vim.keymap.set("n", bind, callback, {
+    desc = desc,
+    buffer = bufnr,
+  })
+end
+
+local make_on_attach = function(after)
+  return function(_, bufnr)
+    local tsb = require("telescope.builtin")
+    lspset("gd", tsb.lsp_definitions, bufnr, "Go to definition")
+    lspset("gI", tsb.lsp_implementations, bufnr, "Go to implementation")
+    lspset("gD", tsb.lsp_type_definitions, bufnr, "Go to type definition")
+    lspset("<leader>lr", tsb.lsp_references, bufnr, "List references")
+    lspset("<leader>li", tsb.lsp_incoming_calls, bufnr, "List incoming calls")
+    lspset("<leader>lo", tsb.lsp_outgoing_calls, bufnr, "List outgoing calls")
+    lspset("<leader>lw", tsb.lsp_workspace_symbols, bufnr, "List workspace symbols")
+    lspset("<leader>lf", function()
+      vim.lsp.buf.format({ async = true })
+    end, bufnr, "Format current buffer.")
+    lspset("<leader>lR", vim.lsp.buf.rename, bufnr, "Rename item")
+    after(bufnr)
+  end
+end
+
+local server_settings = function(after)
+  return {
+    capabilities = require("cmp_nvim_lsp").default_capabilities(),
+    on_attach = make_on_attach(after),
+  }
 end
 
 return {
   {
-    "nvimtools/none-ls.nvim",
-    opts = function()
-      local nls = require("null-ls")
-      local f = nls.builtins.formatting
-      local d = nls.builtins.diagnostics
-      local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
-      return {
-        sources = {
-          d.codespell,
-          d.selene,
-          f.black,
-          f.clang_format,
-          f.gleam_format,
-          f.just,
-          f.prettierd,
-          f.rustywind,
-          f.stylua,
-          nls.builtins.hover.dictionary,
-        },
-        on_attach = function(client, bufnr)
-          if client.supports_method("textDocument/formatting") then
-            vim.api.nvim_create_autocmd("BufWritePre", {
-              group = augroup,
-              buffer = bufnr,
-              callback = function()
-                vim.lsp.buf.format()
-              end,
-            })
-          end
-        end,
+    "neovim/nvim-lspconfig",
+    dependencies = { "williamboman/mason-lspconfig.nvim" },
+    config = function()
+      local servers = {
+        "eslint",
+        "gleam",
+        "glsl_analyzer",
+        "kotlin_language_server",
+        "gradle_ls",
+        "marksman",
+        -- "ocamllsp",
+        "pyright",
+        "sourcekit",
+        "taplo",
+        "tinymist",
+        "ts_ls",
+        "lua_ls",
       }
+      local settings = server_settings(function(bufnr)
+        lspset("<leader>a", vim.lsp.buf.code_action, bufnr, "Code action")
+      end)
+      for i, sv in pairs(servers) do
+        require("lspconfig")[sv].setup(settings)
+      end
     end,
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-    },
   },
   {
     "williamboman/mason.nvim",
@@ -50,103 +64,64 @@ return {
   },
   {
     "williamboman/mason-lspconfig.nvim",
+    dependencies = { "williamboman/mason.nvim" },
     opts = {
-      ensure_installed = {
-        "astro",
-        "eslint",
-        "htmx",
-        "tsserver",
-        "lua_ls",
-        "markdown_oxide",
-        "pyright",
-        "taplo",
-        "zls",
-        "wgsl_analyzer",
-        "svelte",
-      },
-      automatic_installation = true,
-      handlers = {
-        function(sv)
-          require("lspconfig")[sv].setup(capa())
-        end,
-        ["rust_analyzer"] = function() end,
+      automatic_installation = {
+        exclude = { "rust_analyzer" },
       },
     },
-  },
-  {
-    "jay-babu/mason-null-ls.nvim",
-    opts = {
-      automatic_installation = true,
-    },
-  },
-  {
-    "neovim/nvim-lspconfig",
   },
   {
     "mrcjkb/rustaceanvim",
     init = function()
       vim.g.rustaceanvim = {
-        server = {
-          on_attach = function(client, bufnr)
-            vim.keymap.set("n", "<leader>rr", "<cmd>RustLsp runnables<cr>", {
-              buffer = bufnr,
-              desc = "Rust Runnables",
-            })
-            vim.keymap.set({ "n", "v" }, "<leader>J", "<cmd>RustLsp joinLines<cr>", {
-              buffer = bufnr,
-              desc = "Join Lines",
-            })
-            vim.keymap.set("n", "<leader>r<up>", "<cmd>RustLsp moveItem up<cr>", {
-              buffer = bufnr,
-              desc = "Move Item Up",
-            })
-            vim.keymap.set("n", "<leader>r<down>", "<cmd>RustLsp moveItem down<cr>", {
-              buffer = bufnr,
-              desc = "Move Item Down",
-            })
-            vim.keymap.set("n", "<leader>re", "<cmd>RustLsp explainError<cr>", {
-              buffer = bufnr,
-              desc = "Explain Error",
-            })
-            vim.keymap.set("n", "<leader>a", "<cmd>RustLsp codeAction<cr>", {
-              buffer = bufnr,
-              desc = "Code Action",
-            })
-            vim.keymap.set("n", "<leader>R", function()
-              local action_map = {
-                openDocs = "Open Docs",
-                openCargo = "Open Cargo.toml",
-                parentModule = "Open Parent Module",
-                renderDiagnostic = "Open Diagnostics",
-                flyCheck = "Run Cargo Check",
-                syntaxTree = "Open Syntax Tree",
-                expandMacro = "Expand Macro",
-                testables = "Run Tests",
-              }
-              vim.ui.select(vim.tbl_keys(action_map), {
-                prompt = "Rust Menu",
-                format_item = function(item)
-                  return action_map[item]
-                end,
-              }, function(selection)
-                vim.cmd.RustLsp(selection)
-              end)
+        server = server_settings(function(bufnr)
+          vim.keymap.set("n", "<leader>rr", "<cmd>RustLsp runnables<cr>", {
+            buffer = bufnr,
+            desc = "Rust Runnables",
+          })
+          vim.keymap.set({ "n", "v" }, "<leader>J", "<cmd>RustLsp joinLines<cr>", {
+            buffer = bufnr,
+            desc = "Join Lines",
+          })
+          vim.keymap.set("n", "<leader>r<up>", "<cmd>RustLsp moveItem up<cr>", {
+            buffer = bufnr,
+            desc = "Move Item Up",
+          })
+          vim.keymap.set("n", "<leader>r<down>", "<cmd>RustLsp moveItem down<cr>", {
+            buffer = bufnr,
+            desc = "Move Item Down",
+          })
+          vim.keymap.set("n", "<leader>re", "<cmd>RustLsp explainError<cr>", {
+            buffer = bufnr,
+            desc = "Explain Error",
+          })
+          vim.keymap.set("n", "<leader>a", "<cmd>RustLsp codeAction<cr>", {
+            buffer = bufnr,
+            desc = "Code Action",
+          })
+          vim.keymap.set("n", "<leader>R", function()
+            local action_map = {
+              openDocs = "Open Docs",
+              openCargo = "Open Cargo.toml",
+              parentModule = "Open Parent Module",
+              renderDiagnostic = "Open Diagnostics",
+              flyCheck = "Run Cargo Check",
+              syntaxTree = "Open Syntax Tree",
+              expandMacro = "Expand Macro",
+              testables = "Run Tests",
+            }
+            vim.ui.select(vim.tbl_keys(action_map), {
+              prompt = "Rust Menu",
+              format_item = function(item)
+                return action_map[item]
+              end,
+            }, function(selection)
+              vim.cmd.RustLsp(selection)
             end)
-          end,
-        },
+          end)
+        end),
       }
     end,
-  },
-  {
-    "folke/lazydev.nvim",
-    ft = "lua", -- only load on lua files
-    opts = {
-      library = {
-        -- See the configuration section for more details
-        -- Load luvit types when the `vim.uv` word is found
-        { path = "luvit-meta/library", words = { "vim%.uv" } },
-      },
-    },
-  },
-  { "Bilal2453/luvit-meta", lazy = true }, -- optional `vim.uv` typings
+  }
 }

@@ -1,168 +1,204 @@
 return {
-    { -- Collection of various small independent plugins/modules
-        "echasnovski/mini.nvim",
-        config = function()
-            -- Better Around/Inside textobjects
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    dependencies = { "nvim-treesitter/nvim-treesitter-textobjects" },
+    config = function()
+      local configs = require("nvim-treesitter.configs")
+
+      configs.setup({
+        ensure_installed = {
+          "c",
+          "lua",
+          "vim",
+          "vimdoc",
+          "query",
+          "markdown",
+          "markdown_inline",
+          "rust",
+          "html",
+        },
+        sync_install = false,
+        auto_install = true,
+        highlight = { enable = true, additional_vim_regex_highlighting = false },
+        indent = { enable = true },
+        textobjects = {
+          select = {
+            enable = true,
+
+            -- Automatically jump forward to textobj, similar to targets.vim
+            lookahead = true,
+
+            keymaps = {
+              -- You can use the capture groups defined in textobjects.scm
+              ["af"] = "@function.outer",
+              ["if"] = "@function.inner",
+              ["ac"] = "@class.outer",
+              -- You can optionally set descriptions to the mappings (used in the desc parameter of
+              -- nvim_buf_set_keymap) which plugins like which-key display
+              ["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
+              -- You can also use captures from other query groups like `locals.scm`
+              ["as"] = { query = "@local.scope", query_group = "locals", desc = "Select language scope" },
+            },
+            -- You can choose the select mode (default is charwise 'v')
             --
-            -- Examples:
-            --  - va)  - [V]isually select [A]round [)]paren
-            --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
-            --  - ci'  - [C]hange [I]nside [']quote
-            require("mini.ai").setup({ n_lines = 500 })
-
-            -- Add/delete/replace surroundings (brackets, quotes, etc.)
+            -- Can also be a function which gets passed a table with the keys
+            -- * query_string: eg '@function.inner'
+            -- * method: eg 'v' or 'o'
+            -- and should return the mode ('v', 'V', or '<c-v>') or a table
+            -- mapping query_strings to modes.
+            selection_modes = {
+              ["@parameter.outer"] = "v", -- charwise
+              ["@function.outer"] = "V",  -- linewise
+              ["@class.outer"] = "<c-v>", -- blockwise
+            },
+            -- If you set this to `true` (default is `false`) then any textobject is
+            -- extended to include preceding or succeeding whitespace. Succeeding
+            -- whitespace has priority in order to act similarly to eg the built-in
+            -- `ap`.
             --
-            -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-            -- - sd'   - [S]urround [D]elete [']quotes
-            -- - sr)'  - [S]urround [R]eplace [)] [']
-            require("mini.surround").setup()
+            -- Can also be a function which gets passed a table with the keys
+            -- * query_string: eg '@function.inner'
+            -- * selection_mode: eg 'v'
+            -- and should return true or false
+            include_surrounding_whitespace = true,
+          },
+        },
+      })
+    end,
+  },
+
+  {
+    "L3MON4D3/LuaSnip",
+    -- follow latest release.
+    version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
+    -- install jsregexp (optional!).
+    build = "make install_jsregexp",
+    lazy = false,
+    dependencies = { "rafamadriz/friendly-snippets" },
+    config = function()
+      require("luasnip.loaders.from_vscode").lazy_load()
+    end,
+    keys = {
+      {
+        "<S-Right>",
+        function()
+          require("luasnip").jump(1)
         end,
-    },
-    {
-        "epwalsh/obsidian.nvim",
-        version = "*", -- recommended, use latest release instead of latest commit
-        lazy = true,
-        event = {
-            "BufReadPre " .. vim.fn.expand("~") .. "/Documents/*.md",
-            "BufNewFile" .. vim.fn.expand("~") .. "/Documents/*.md",
-        },
-        dependencies = {
-            -- Required.
-            "nvim-lua/plenary.nvim",
-
-            -- see below for full list of optional dependencies 👇
-        },
-        opts = {
-            workspaces = {
-                {
-                    name = "personal",
-                    path = "~/Documents/Writing",
-                },
-            },
-        },
-        ui = {
-            enable = false,
-        },
-    },
-    {
-        "windwp/nvim-autopairs",
-        event = "InsertEnter",
-        config = true,
-    },
-    {
-        "L3MON4D3/LuaSnip",
-        dependencies = { "rafamadriz/friendly-snippets" },
-        build = "make install_jsregexp",
-        keys = {
-            {
-                "<S-Right>",
-                function()
-                    require("luasnip").jump(1)
-                end,
-                mode = { "i", "s" },
-            },
-        },
-        lazy = false,
-        config = function()
-            require("luasnip.loaders.from_vscode").lazy_load()
+        mode = { "i", "s" },
+      },
+      {
+        "<S-Left>",
+        function()
+          require("luasnip").jump(-1)
         end,
+        mode = { "i", "s" },
+      },
     },
-    {
-        "hrsh7th/nvim-cmp",
-        dependencies = {
-            "saadparwaiz1/cmp_luasnip",
-            "hrsh7th/cmp-nvim-lsp",
-            "hrsh7th/cmp-path",
-            "hrsh7th/cmp-buffer",
-            "hrsh7th/cmp-cmdline",
-            {
-                "uga-rosa/cmp-dictionary",
-                opts = { paths = { "/usr/share/dict/words" }, exact_length = 2 },
-            },
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    dependencies = {
+      "saadparwaiz1/cmp_luasnip",
+      "hrsh7th/cmp-buffer",
+      "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-path",
+      "hrsh7th/cmp-cmdline",
+      "onsails/lspkind.nvim",
+    },
+    config = function()
+      vim.api.nvim_set_hl(0, "CmpGhostText", { link = "Comment", default = true })
+      local cmp = require("cmp")
+
+      cmp.setup({
+        snippet = {
+          expand = function(args)
+            require("luasnip").lsp_expand(args.body)
+          end,
         },
-        config = function()
-            local cmp = require("cmp")
-            cmp.setup({
-                snippet = {
-                    expand = function(args)
-                        require("luasnip").lsp_expand(args.body)
-                    end,
-                },
-                sources = cmp.config.sources({
-                    { name = "luasnip" },
-                    { name = "lazydev", group_index = 0 },
-                    { name = "nvim_lsp" },
-                    { name = "buffer" },
-                }),
-                mapping = {
-                    ["<Tab>"] = cmp.mapping(function(fallback)
-                        if cmp.visible() then
-                            local entry = cmp.get_selected_entry()
-                            if not entry then
-                                cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
-                            end
-                            cmp.confirm()
-                        else
-                            fallback()
-                        end
-                    end, { "i", "s", "c" }),
-                    ["<Down>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
-                    ["<Up>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
-                    ["<S-Down>"] = cmp.mapping.scroll_docs(4),
-                    ["<S-Up>"] = cmp.mapping.scroll_docs(-4),
-                },
-            })
+        mapping = {
+          ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              local entry = cmp.get_selected_entry()
+              if not entry then
+                cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+              end
+              cmp.confirm()
+            else
+              fallback()
+            end
+          end, { "i", "s", "c" }),
+          ["<Down>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
+          ["<Up>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
+          ["<S-Down>"] = cmp.mapping.scroll_docs(4),
+          ["<S-Up>"] = cmp.mapping.scroll_docs(-4),
+        },
+        sources = {
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
+          { name = "buffer" },
+        },
+        experimental = {
+          ghost_text = {
+            hl_group = "CmpGhostText",
+          },
+        },
+        window = {
+          completion = {
+            winhighlight = "Normal:Pmenu,FloatBorder:Pmenu,Search:None",
+            col_offset = -3,
+            side_padding = 0,
+          },
+        },
+        formatting = {
+          fields = { "kind", "abbr", "menu" },
+          format = function(entry, vim_item)
+            local kind = require("lspkind").cmp_format({ mode = "symbol_text", maxwidth = 50 })(entry, vim_item)
+            local strings = vim.split(kind.kind, "%s", { trimempty = true })
+            kind.kind = " " .. (strings[1] or "") .. " "
+            kind.menu = "    (" .. (strings[2] or "") .. ")"
 
-            cmp.setup.cmdline({ "/", "?" }, {
-                mapping = cmp.mapping.preset.cmdline(),
-                sources = {
-                    { name = "buffer" },
-                },
-            })
+            return kind
+          end,
+        },
+      })
+      cmp.setup.cmdline({ "/", "?" }, {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = {
+          { name = "buffer" },
+        },
+      })
 
-            cmp.setup.cmdline(":", {
-                mapping = cmp.mapping.preset.cmdline(),
-                sources = cmp.config.sources({
-                    { name = "path" },
-                    { name = "cmdline" },
-                }),
-                matching = { disallow_symbol_nonprefix_matching = false },
-            })
-
-            cmp.setup.filetype("markdown", {
-                snippet = {
-                    expand = function(args)
-                        require("luasnip").lsp_expand(args.body)
-                    end,
-                },
-                sources = cmp.config.sources({
-                    { name = "luasnip" },
-                    { name = "dictionary", keyword_length = 2 },
-                    { name = "nvim_lsp" },
-                    { name = "buffer" },
-                }),
-                mapping = {
-                    ["<Tab>"] = cmp.mapping(function(fallback)
-                        if cmp.visible() then
-                            local entry = cmp.get_selected_entry()
-                            if not entry then
-                                cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
-                            end
-                            cmp.confirm()
-                        else
-                            fallback()
-                        end
-                    end, { "i", "s", "c" }),
-                    ["<Down>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
-                    ["<Up>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
-                    ["<S-Down>"] = cmp.mapping.scroll_docs(4),
-                    ["<S-Up>"] = cmp.mapping.scroll_docs(-4),
-                },
-            })
-        end,
-    },
-    {
-        "windwp/nvim-ts-autotag",
-        config = true,
-    },
+      -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+      cmp.setup.cmdline(":", {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources({
+          { name = "path" },
+        }, {
+          { name = "cmdline" },
+        }),
+        matching = { disallow_symbol_nonprefix_matching = false },
+      })
+    end,
+  },
+  {
+    "SCJangra/table-nvim",
+    ft = "markdown",
+    opts = {},
+  },
+  {
+    "ggandor/leap.nvim",
+    config = function()
+      -- require("leap").create_default_mappings()
+    end,
+  },
+  {
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    config = true,
+  },
+  {
+    "windwp/nvim-ts-autotag",
+    config = true
+  }
 }

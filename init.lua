@@ -1,7 +1,4 @@
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
-
-require("config.set")
+require("config.options")
 require("config.lazy")
-require("config.key")
-require("config.autocmd")
+require("config.keymaps")
+require("config.autocmds")
