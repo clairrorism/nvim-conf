@@ -2,7 +2,7 @@ local hex2color = function(color)
   local rv = {
     red = 0,
     green = 0,
-    blue = 0
+    blue = 0,
   }
   local offset = 1
   if not (math.fmod(#color, 2) == 0) then
@@ -32,7 +32,6 @@ return {
   {
     "rebelot/heirline.nvim",
     dependencies = { "Zeioth/heirline-components.nvim" },
-    opts = {},
     config = function()
       local heirline = require("heirline")
       local hlc = require("heirline-components.all")
@@ -54,7 +53,13 @@ return {
           hlc.component.compiler_state(),
           hlc.component.nav(),
         },
+        statuscolumn = {
+          hlc.component.foldcolumn(),
+          hlc.component.numbercolumn(),
+          hlc.component.signcolumn(),
+        },
       })
+      vim.opt.foldcolumn = "1"
     end,
   },
   {
@@ -72,7 +77,7 @@ return {
     "folke/zen-mode.nvim",
     opts = {
       window = {
-        backdrop = 0.9,
+        backdrop = 1.0,
         width = function()
           if vim.bo.filetype == "markdown" then
             return 70
@@ -104,10 +109,10 @@ return {
 
       return {
         { "<leader>ff", tsb.find_files, desc = "List files" },
-        { "<leader>fg", tsb.live_grep,  desc = "List grep results" },
-        { "<leader>fb", tsb.buffers,    desc = "List buffers" },
-        { "<leader>fo", tsb.oldfiles,   desc = "List old files" },
-        { "<leader>fj", tsb.jumplist,   desc = "List jumplist entries" },
+        { "<leader>fg", tsb.live_grep, desc = "List grep results" },
+        { "<leader>fb", tsb.buffers, desc = "List buffers" },
+        { "<leader>fo", tsb.oldfiles, desc = "List old files" },
+        { "<leader>fj", tsb.jumplist, desc = "List jumplist entries" },
       }
     end,
   },
@@ -145,7 +150,6 @@ return {
         return {
           PmenuSel = { bg = colors.surface1, fg = "NONE" },
           Pmenu = { fg = colors.text, bg = colors.surface0 },
-
 
           CmpItemAbbrDeprecated = { fg = colors.red, bg = "NONE", strikethrough = true },
           CmpItemAbbrMatch = { fg = colors.sky, bg = "NONE", bold = true },
@@ -185,12 +189,12 @@ return {
           CmpItemKindColor = blendhl(colors.teal),
           CmpItemKindTypeParameter = blendhl(colors.teal),
         }
-      end
+      end,
     },
     config = function(_, opts)
       require("catppuccin").setup(opts)
-      vim.cmd [[colorscheme catppuccin]]
-    end
+      vim.cmd([[colorscheme catppuccin]])
+    end,
   },
   { "RRethy/vim-illuminate" },
   { "HiPhish/rainbow-delimiters.nvim" },
@@ -229,6 +233,7 @@ return {
     },
     dependencies = {
       "MunifTanjim/nui.nvim",
+      "rcarriga/nvim-notify",
     },
   },
   -- TODO: neogit
@@ -236,7 +241,7 @@ return {
     "stevearc/overseer.nvim",
     opts = {},
     keys = {
-      { "<leader>ur", "<cmd>OverseerRun<cr>",    desc = "Task runner" },
+      { "<leader>ur", "<cmd>OverseerRun<cr>", desc = "Task runner" },
       { "<leader>ut", "<cmd>OverseerToggle<cr>", desc = "Task list" },
     },
   },
@@ -256,7 +261,7 @@ return {
   },
   {
     "folke/which-key.nvim",
-    config = true
+    config = true,
   },
   {
     "lukas-reineke/indent-blankline.nvim",
@@ -267,10 +272,20 @@ return {
   },
   {
     "stevearc/dressing.nvim",
-    opts = {}
+    opts = {},
   },
   {
     "norcalli/nvim-colorizer.lua",
-    opts = {}
-  }
+    opts = {},
+  },
+  {
+    "kevinhwang91/nvim-ufo",
+    dependencies = { "kevinhwang91/promise-async" },
+    lazy = false,
+    opts = {
+      provider_selector = function(bufnr, filetype, buftype)
+        return { "treesitter", "indent" }
+      end,
+    },
+  },
 }

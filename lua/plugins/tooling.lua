@@ -123,5 +123,50 @@ return {
         end),
       }
     end,
-  }
+  },
+  {
+    "nvimtools/none-ls.nvim",
+    opts = function()
+      local nls = require("null-ls").builtins
+      return {
+        sources = {
+          nls.diagnostics.proselint.with({
+            filetypes = { "markdown", "typst", "tex" }
+          }),
+          nls.diagnostics.codespell,
+          nls.diagnostics.ktlint,
+          nls.diagnostics.swiftlint,
+          nls.diagnostics.vale, -- TODO: set up vale
+          nls.formatting.black,
+          nls.formatting.dxfmt,
+          nls.formatting.gleam_format,
+          nls.formatting.just,
+          nls.formatting.ktlint,
+          nls.formatting.prettierd,
+          nls.formatting.stylua,
+          nls.hover.dictionary,
+        },
+        on_attach = function(client, bufnr)
+          if client.supports_method("textDocument/formatting") then
+            vim.api.nvim_create_autocmd("BufWritePre", {
+              group = augroup,
+              buffer = bufnr,
+              callback = function()
+                vim.lsp.buf.format()
+              end,
+            })
+          end
+        end,
+      }
+    end,
+    dependencies = {
+      "nvim-lua/plenary.nvim"
+    }
+  },
+  {
+    "jay-babu/mason-null-ls.nvim",
+    opts = {
+      automatic_installation = true,
+    },
+  },
 }

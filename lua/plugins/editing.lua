@@ -49,7 +49,7 @@ return {
             -- mapping query_strings to modes.
             selection_modes = {
               ["@parameter.outer"] = "v", -- charwise
-              ["@function.outer"] = "V",  -- linewise
+              ["@function.outer"] = "V", -- linewise
               ["@class.outer"] = "<c-v>", -- blockwise
             },
             -- If you set this to `true` (default is `false`) then any textobject is
@@ -188,8 +188,20 @@ return {
   },
   {
     "ggandor/leap.nvim",
-    config = function()
-      -- require("leap").create_default_mappings()
+    enabled = true,
+    keys = {
+      { "s", mode = { "n", "x", "o" }, desc = "Leap Forward to" },
+      { "S", mode = { "n", "x", "o" }, desc = "Leap Backward to" },
+      { "gs", mode = { "n", "x", "o" }, desc = "Leap from Windows" },
+    },
+    config = function(_, opts)
+      local leap = require("leap")
+      for k, v in pairs(opts) do
+        leap.opts[k] = v
+      end
+      leap.add_default_mappings(true)
+      vim.keymap.del({ "x", "o" }, "x")
+      vim.keymap.del({ "x", "o" }, "X")
     end,
   },
   {
@@ -199,6 +211,15 @@ return {
   },
   {
     "windwp/nvim-ts-autotag",
-    config = true
-  }
+    config = true,
+  },
+  {
+    "echasnovski/mini.nvim",
+    version = "*",
+    config = function()
+      require("mini.ai").setup()
+      require("mini.comment").setup()
+      require("mini.surround").setup()
+    end,
+  },
 }
