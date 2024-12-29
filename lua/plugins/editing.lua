@@ -182,11 +182,6 @@ return {
     end,
   },
   {
-    "SCJangra/table-nvim",
-    ft = "markdown",
-    opts = {},
-  },
-  {
     "ggandor/leap.nvim",
     enabled = true,
     keys = {

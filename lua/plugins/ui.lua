@@ -39,20 +39,6 @@ return {
       hlc.init.subscribe_to_events()
       heirline.load_colors(hlc.hl.get_colors())
       heirline.setup({
-        statusline = {
-          hl = { fg = "fg", bg = "bg" },
-          hlc.component.mode({ mode_text = { pad_text = "center" } }),
-          hlc.component.git_branch(),
-          hlc.component.file_info(),
-          hlc.component.git_diff(),
-          hlc.component.diagnostics(),
-          hlc.component.fill(),
-          hlc.component.cmd_info(),
-          hlc.component.fill(),
-          hlc.component.lsp(),
-          hlc.component.compiler_state(),
-          hlc.component.nav(),
-        },
         statuscolumn = {
           hlc.component.foldcolumn(),
           hlc.component.numbercolumn(),
@@ -63,23 +49,12 @@ return {
     end,
   },
   {
-    "OXY2DEV/markview.nvim",
-    lazy = false, -- Recommended
-    -- ft = "markdown" -- If you decide to lazy-load anyway
-
-    dependencies = {
-      "nvim-treesitter/nvim-treesitter",
-      "nvim-tree/nvim-web-devicons",
-    },
-    opts = {},
-  },
-  {
     "folke/zen-mode.nvim",
     opts = {
       window = {
         backdrop = 1.0,
         width = function()
-          if vim.bo.filetype == "markdown" then
+          if vim.bo.filetype == "markdown" or vim.bo.filetype == "typst" then
             return 70
           else
             return 110
@@ -87,17 +62,12 @@ return {
         end,
         height = 0.9,
       },
+      plugins = {
+        twilight = { enabled = false },
+      },
     },
     keys = {
       { "<leader>uz", "<cmd>ZenMode<cr>", desc = "Toggle Zen Mode" },
-    },
-  },
-  {
-    "folke/twilight.nvim",
-    opts = {
-      -- your configuration comes here
-      -- or leave it empty to use the default settings
-      -- refer to the configuration section below
     },
   },
   {
@@ -121,9 +91,8 @@ return {
     branch = "v3.x",
     dependencies = {
       "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+      "nvim-tree/nvim-web-devicons",
       "MunifTanjim/nui.nvim",
-      -- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
     },
     keys = {
       { "<leader>uf", "<cmd>Neotree float<cr>", desc = "Open FS tree" },
@@ -142,6 +111,7 @@ return {
         lsp_trouble = true,
         which_key = true,
       },
+      transparent_background = true,
       custom_highlights = function(colors)
         local blendhl = function(color)
           return { fg = blend(colors.text, color, 0.125), bg = blend(colors.base, color, 0.75) }
@@ -199,18 +169,6 @@ return {
   { "RRethy/vim-illuminate" },
   { "HiPhish/rainbow-delimiters.nvim" },
   {
-    "utilyre/barbecue.nvim",
-    name = "barbecue",
-    version = "*",
-    dependencies = {
-      "SmiteshP/nvim-navic",
-      "nvim-tree/nvim-web-devicons", -- optional dependency
-    },
-    opts = {
-      -- configurations go here
-    },
-  },
-  {
     "akinsho/bufferline.nvim",
     version = "*",
     dependencies = "nvim-tree/nvim-web-devicons",
@@ -233,20 +191,18 @@ return {
     },
     dependencies = {
       "MunifTanjim/nui.nvim",
-      "rcarriga/nvim-notify",
     },
   },
-  -- TODO: neogit
   {
-    "stevearc/overseer.nvim",
-    opts = {},
+    "NeogitOrg/neogit",
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- required
+      "sindrets/diffview.nvim", -- optional - Diff integration
+      "nvim-telescope/telescope.nvim", -- optional
+    },
     keys = {
-      { "<leader>ur", "<cmd>OverseerRun<cr>", desc = "Task runner" },
-      { "<leader>ut", "<cmd>OverseerToggle<cr>", desc = "Task list" },
+      { "<leader>ug", "<cmd>Neogit<cr>", desc = "Open FS tree" },
     },
-  },
-  {
-    "lewis6991/gitsigns.nvim",
     opts = {},
   },
   {
@@ -286,6 +242,12 @@ return {
       provider_selector = function(bufnr, filetype, buftype)
         return { "treesitter", "indent" }
       end,
+    },
+  },
+  {
+    "sschleemilch/slimline.nvim",
+    opts = {
+      style = "fg",
     },
   },
 }
